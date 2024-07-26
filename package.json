@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@tensorflow-models/hand-pose-detection": "^2.0.1",
-    "@tensorflow/tfjs": "^4.20.0",
-    "fingerpose": "^0.1.0"
+    "@tensorflow/tfjs": "^4.20.0"
   }
 }
