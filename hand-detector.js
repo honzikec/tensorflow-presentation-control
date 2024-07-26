@@ -48,8 +48,6 @@ function runDetection() {
 }
 
 function getHandDirection(keypoints, curledFingers) {
-    console.log('Curled fingers:', curledFingers);
-    console.log('Keypoints:', keypoints);
     const centerPoint = calculateCenterPoint(keypoints);
 
     const fingerTips = keypoints.filter(

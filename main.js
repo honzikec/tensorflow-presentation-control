@@ -4,7 +4,7 @@ import { createDetector } from './hand-detector';
 
 document.querySelector('#app').innerHTML = `
   <div>
-    <video id="webcam" autoplay></video>
+    <video id="webcam" autoplay width="500" height="500"></video>
   </div>
 `
 
