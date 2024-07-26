@@ -1,7 +1,9 @@
 import * as tf from '@tensorflow/tfjs-core';
 import '@tensorflow/tfjs-backend-webgl';
 import * as handdetection from '@tensorflow-models/hand-pose-detection';
-import fingerSplayedGesture from './gestures/finger-splayed-gesture';
+import leftGesture from './gestures/left-gesture';
+import startGesture from './gestures/start-gesture';
+import rightGesture from './gestures/right-gesture';
 
 let detector;
 let globalVideoElement;
@@ -23,9 +25,9 @@ export function createDetector(videoElement, directionChangeCallback, detectorCr
 }
 
 const GE = new fp.GestureEstimator([
-    // fp.Gestures.VictoryGesture,
-    // fp.Gestures.ThumbsUpGesture,
-    fingerSplayedGesture,
+    startGesture,
+    leftGesture,
+    rightGesture,
 ]);
 
 function runDetection() {
