@@ -1,10 +1,15 @@
-// Assuming you have already included TensorFlow.js and HandPose Detection model scripts in your HTML
+import * as tf from '@tensorflow/tfjs-core';
+import '@tensorflow/tfjs-backend-webgl';
+import * as handdetection from '@tensorflow-models/hand-pose-detection';
 
 let detector;
-let videoElement;
-let directionChangeCallback;
+let globalVideoElement;
+let globalDirectionChangeCallback;
 
-function createDetector() {
+export function createDetector(videoElement, directionChangeCallback, detectorCreatedCallback) {
+    globalVideoElement = videoElement;
+    globalDirectionChangeCallback = directionChangeCallback;
+
     handdetection.createDetector(handdetection.SupportedModels.MediaPipeHands, {
         runtime: 'tfjs',
         modelType: 'lite',
@@ -18,12 +23,12 @@ function createDetector() {
 
 function runDetection() {
     if (detector) {
-        if (videoElement.readyState !== 4) {
+        if (globalVideoElement.readyState !== 4) {
             requestAnimationFrame(runDetection);
             return;
         }
 
-        detector.estimateHands(videoElement)
+        detector.estimateHands(globalVideoElement)
             .then(predictions => {
                 if (predictions.length === 0) {
                     requestAnimationFrame(runDetection);
@@ -34,7 +39,7 @@ function runDetection() {
                     predictions[0].keypoints,
                     estimateCurledFingers(predictions[0].keypoints3D)
                 );
-                directionChangeCallback(direction);
+                globalDirectionChangeCallback(direction);
 
                 requestAnimationFrame(runDetection);
             })
@@ -43,6 +48,8 @@ function runDetection() {
 }
 
 function getHandDirection(keypoints, curledFingers) {
+    console.log('Curled fingers:', curledFingers);
+    console.log('Keypoints:', keypoints);
     const centerPoint = calculateCenterPoint(keypoints);
 
     const fingerTips = keypoints.filter(
@@ -128,14 +135,3 @@ function estimateCurledFingers(points) {
 
     return curledFingers;
 }
-
-// Example usage:
-videoElement = document.querySelector('video');
-directionChangeCallback = (direction) => {
-    console.log('Direction changed:', direction);
-};
-const detectorCreatedCallback = () => {
-    console.log('Hand detector created');
-};
-
-createDetector();

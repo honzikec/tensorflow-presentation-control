@@ -1,4 +1,5 @@
-import './style.css'
+import './style.css';
+import { createDetector } from './hand-detector';
 
 
 document.querySelector('#app').innerHTML = `
@@ -7,21 +8,30 @@ document.querySelector('#app').innerHTML = `
   </div>
 `
 
-document.addEventListener("DOMContentLoaded", function() {
-    const video = document.getElementById('webcam');
-    console.log("WORKING?", video)
+document.addEventListener("DOMContentLoaded", function () {
+  const video = document.getElementById('webcam');
+
+  const directionChangeCallback = (direction) => {
+    console.log('Direction changed:', direction);
+  };
+  const detectorCreatedCallback = () => {
+    console.log('Hand detector created');
+  };
+
+  createDetector(video, directionChangeCallback, detectorCreatedCallback);
 
 
-    // Check if the browser supports getUserMedia
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        // Request access to the webcam
-        navigator.mediaDevices.getUserMedia({video: true})
-            .then(function (stream) {
-                console.log('stream')
-                // Set the video source to the webcam stream
-                video.srcObject = stream;
-            }).catch(error => {
-                console.log('error', error)
-            })
-    }
+  // Check if the browser supports getUserMedia
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    // Request access to the webcam
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(function (stream) {
+        console.log('stream')
+        // Set the video source to the webcam stream
+        video.srcObject = stream;
+      }).catch(error => {
+        console.log('error', error)
+      })
+  }
 });
+
