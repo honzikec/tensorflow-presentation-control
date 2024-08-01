@@ -1,69 +1,118 @@
-import * as tf from '@tensorflow/tfjs-core';
-import '@tensorflow/tfjs-backend-webgl';
-import * as handdetection from '@tensorflow-models/hand-pose-detection';
-import leftGesture from './gestures/left-gesture';
-import startGesture from './gestures/start-gesture';
-import rightGesture from './gestures/right-gesture';
+import * as tf from "@tensorflow/tfjs-core";
+import "@tensorflow/tfjs-backend-webgl";
+import * as handdetection from "@tensorflow-models/hand-pose-detection";
+import leftGesture from "./gestures/left-gesture";
+import startGesture from "./gestures/start-gesture";
+import rightGesture from "./gestures/right-gesture";
 
 let detector;
 let globalVideoElement;
 let globalDirectionChangeCallback;
+let globalDialogElement;
+let globalDialogElement2;
 
-export function createDetector(videoElement, directionChangeCallback, detectorCreatedCallback) {
-    globalVideoElement = videoElement;
-    globalDirectionChangeCallback = directionChangeCallback;
+export function createDetector(
+  videoElement,
+  directionChangeCallback,
+  detectorCreatedCallback,
+  dialogElement,
+  dialogElement2
+) {
+  globalVideoElement = videoElement;
+  globalDirectionChangeCallback = directionChangeCallback;
+  globalDialogElement = dialogElement;
+  globalDialogElement2 = dialogElement2;
 
-    handdetection.createDetector(handdetection.SupportedModels.MediaPipeHands, {
-        runtime: 'tfjs',
-        modelType: 'lite',
-        maxHands: 1
-    }).then(d => {
-        detector = d;
-        detectorCreatedCallback();
-        runDetection();
-    }).catch(err => console.error(err));
+  handdetection
+    .createDetector(handdetection.SupportedModels.MediaPipeHands, {
+      runtime: "tfjs",
+      modelType: "lite",
+      maxHands: 1,
+    })
+    .then((d) => {
+      detector = d;
+      detectorCreatedCallback();
+      runDetection();
+    })
+    .catch((err) => console.error(err));
 }
 
-const GE = new fp.GestureEstimator([
-    startGesture,
-    leftGesture,
-    rightGesture,
-]);
+const GE = new fp.GestureEstimator([startGesture, leftGesture, rightGesture]);
+
+let rightGestureFlag = true;
+let leftGestureFlag = true;
 
 function runDetection() {
-    if (detector) {
-        if (globalVideoElement.readyState !== 4) {
-            requestAnimationFrame(runDetection);
-            return;
+  if (detector) {
+    if (globalVideoElement.readyState !== 4) {
+      requestAnimationFrame(runDetection);
+      return;
+    }
+
+    detector
+      .estimateHands(globalVideoElement, true)
+      .then((predictions) => {
+        if (predictions.length === 0) {
+          requestAnimationFrame(runDetection);
+          return;
         }
 
+        for (const hand of predictions) {
+          const est = GE.estimate(hand.keypoints3D, 9);
+          if (est.gestures.length > 0) {
+            // find gesture with highest match score
+            let result = est.gestures.reduce((p, c) => {
+              return p.score > c.score ? p : c;
+            });
+            const chosenHand = hand.handedness.toLowerCase();
+            console.log(chosenHand, result.name, result.score);
+          }
+        }
+        const estimatedGestures = GE.estimate(predictions[0].keypoints3D, 7.5);
+        console.log(estimatedGestures);
 
-        detector.estimateHands(globalVideoElement, true)
-            .then(predictions => {
-                if (predictions.length === 0) {
-                    requestAnimationFrame(runDetection);
-                    return;
-                }
+        if (
+          estimatedGestures.gestures.length > 0 &&
+          estimatedGestures.gestures[0].name === "right" &&
+          !rightGestureFlag
+        ) {
+          console.log("hey");
+          globalDialogElement2.close();
+          //   window.open("https://www.google.com", "_blank");
 
-                for (const hand of predictions) {
+          rightGestureFlag = true;
+          leftGestureFlag = false;
+          //   open a dialog box
+          globalDialogElement.showModal();
+        }
 
-                    const est = GE.estimate(hand.keypoints3D, 9)
-                    if (est.gestures.length > 0) {
+        if (
+          estimatedGestures.gestures.length > 0 &&
+          estimatedGestures.gestures[0].name === "left" &&
+          !leftGestureFlag
+        ) {
+          leftGestureFlag = true;
+          rightGestureFlag = false;
+          globalDialogElement.close();
+          globalDialogElement2.showModal();
+          //   alert("You have closed the tab");
+        }
 
-                        // find gesture with highest match score
-                        let result = est.gestures.reduce((p, c) => {
-                            return (p.score > c.score) ? p : c
-                        })
-                        const chosenHand = hand.handedness.toLowerCase();
-                        console.log(chosenHand, result.name, result.score);
-                    }
-                }
-                const estimatedGestures = GE.estimate(predictions[0].keypoints3D, 5.5);
-                console.log(estimatedGestures);
+        if (
+          estimatedGestures.gestures.length > 0 &&
+          estimatedGestures.gestures[0].name === "start"
+        ) {
+          globalDialogElement2.close();
+          globalDialogElement.close();
+          rightGestureFlag = false;
+          leftGestureFlag = false;
+          //   close the current dialog/alert on screen
+        }
 
+        // if it is
 
-                requestAnimationFrame(runDetection);
-            })
-            .catch(err => console.error(err));
-    }
+        requestAnimationFrame(runDetection);
+      })
+      .catch((err) => console.error(err));
+  }
 }
